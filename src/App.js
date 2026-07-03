@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login';
 import DashboardHome from './DashboardHome';
-
 import Orders from './pages/Orders/Orders';
-
 import Categories from './components/ProductCategories/Categories';
 import Product from './components/Product/Product';
 import Cart from './components/Cart/Cart';
@@ -14,6 +12,7 @@ import Banner from './components/Banner/Banner';
 import TopBanner from './components/TopBanner/TopBanner';
 import DeliveryCharger from './components/DeliveryCharger/DeliveryCharger';
 import FAQ from './components/FAQ/FAQ';
+import PaymentMethod from './components/PaymentMethod/PaymentMethod';
 
 const PrivateRoute = ({ children }) => {
   // Check if token exists or user is logged in
@@ -53,6 +52,7 @@ function App() {
           <Route path="top-banners" element={<main className="dashboard-main"><TopBanner /></main>} />
           <Route path="delivery-charger" element={<main className="dashboard-main"><DeliveryCharger /></main>} />
           <Route path="faqs" element={<main className="dashboard-main"><FAQ /></main>} />
+          <Route path="payment-methods" element={<main className="dashboard-main"><PaymentMethod /></main>} />
         </Route>
       </Routes>
     </BrowserRouter>
