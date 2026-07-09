@@ -71,7 +71,7 @@ function Banner({ bannerType, title }) {
 
   useEffect(() => {
     fetchBanners();
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bannerType]);
 
   const handleOpenModal = (banner = null) => {
