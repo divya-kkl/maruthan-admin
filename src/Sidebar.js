@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FaHome, FaTags, FaBoxOpen, FaShoppingCart, FaUsers, FaImages, FaCaretDown, FaCaretUp, FaTruck, FaQuestionCircle, FaCreditCard } from 'react-icons/fa';
+import { FaHome, FaTags, FaBoxOpen, FaShoppingCart, FaUsers, FaImages, FaCaretDown, FaCaretUp, FaTruck, FaQuestionCircle, FaCreditCard, FaTicketAlt } from 'react-icons/fa';
 import './Sidebar.css';
 
 function Sidebar() {
@@ -45,6 +45,9 @@ function Sidebar() {
         <NavLink to="/dashboard/payment-methods" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
           <FaCreditCard className="nav-icon" /> Payment Methods
         </NavLink>
+        <NavLink to="/dashboard/coupons" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+          <FaTicketAlt className="nav-icon" /> Coupons
+        </NavLink>
         
         <div className="nav-group">
           <div className="nav-link" onClick={() => setBannersOpen(!bannersOpen)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -64,9 +67,7 @@ function Sidebar() {
               <NavLink to="/dashboard/banners/third" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} style={{ fontSize: '14px', padding: '8px 15px' }}>
                 Third Banner
               </NavLink>
-              <NavLink to="/dashboard/top-banners" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"} style={{ fontSize: '14px', padding: '8px 15px' }}>
-                Top Banners
-              </NavLink>
+
             </div>
           )}
         </div>
