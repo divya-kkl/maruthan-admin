@@ -41,6 +41,7 @@ const GET_ALL_PRODUCTS = gql`
         lining
         washCare
         ironCare
+        couponCode
         createdAt
         updatedAt
       }
@@ -130,6 +131,7 @@ function Product() {
     lining: '',
     washCare: '',
     ironCare: '',
+    couponCode: '',
     isFeatured: false
   });
 
@@ -217,6 +219,7 @@ function Product() {
         lining: product.lining || '',
         washCare: product.washCare || '',
         ironCare: product.ironCare || '',
+        couponCode: product.couponCode || '',
         isFeatured: product.isFeatured || false
       });
     } else {
@@ -240,6 +243,7 @@ function Product() {
         lining: '',
         washCare: '',
         ironCare: '',
+        couponCode: '',
         isFeatured: false
       });
     }
@@ -322,6 +326,7 @@ function Product() {
       lining: formData.lining,
       washCare: formData.washCare,
       ironCare: formData.ironCare,
+      couponCode: formData.couponCode,
       isFeatured: formData.isFeatured
     };
 
@@ -589,6 +594,7 @@ function Product() {
                 <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Lining:</strong> {viewModalProduct.lining || "N/A"}</div>
                 <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Wash Care:</strong> {viewModalProduct.washCare || "N/A"}</div>
                 <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Iron Care:</strong> {viewModalProduct.ironCare || "N/A"}</div>
+                <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Coupon Code:</strong> <span style={{ color: '#e67e22', fontWeight: 'bold' }}>{viewModalProduct.couponCode || "None"}</span></div>
               </div>
             </div>
 
@@ -748,6 +754,10 @@ function Product() {
                   <div className="form-group">
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Iron Care</label>
                     <input type="text" value={formData.ironCare} onChange={(e) => setFormData({ ...formData, ironCare: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Coupon Code</label>
+                    <input type="text" value={formData.couponCode} onChange={(e) => setFormData({ ...formData, couponCode: e.target.value.toUpperCase() })} placeholder="e.g. SUMMER50" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
                   </div>
                 </div>
               </div>

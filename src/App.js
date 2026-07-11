@@ -13,7 +13,7 @@ import TopBanner from './components/TopBanner/TopBanner';
 import DeliveryCharger from './components/DeliveryCharger/DeliveryCharger';
 import FAQ from './components/FAQ/FAQ';
 import PaymentMethod from './components/PaymentMethod/PaymentMethod';
-
+import Coupon from './components/Coupon/Coupon';
 const PrivateRoute = ({ children }) => {
   // Check if token exists or user is logged in
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -53,6 +53,7 @@ function App() {
           <Route path="delivery-charger" element={<main className="dashboard-main"><DeliveryCharger /></main>} />
           <Route path="faqs" element={<main className="dashboard-main"><FAQ /></main>} />
           <Route path="payment-methods" element={<main className="dashboard-main"><PaymentMethod /></main>} />
+          <Route path="coupons" element={<main className="dashboard-main"><Coupon /></main>} />
         </Route>
       </Routes>
     </BrowserRouter>
