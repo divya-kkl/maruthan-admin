@@ -32,6 +32,26 @@
 .header-actions {
   display: flex;
   gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 8px 15px;
+  border: 1px solid #d1d3e2;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  background-color: #f8f9fc;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:focus, .filter-select:hover {
+  border-color: #4e73df;
+  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+  background-color: #fff;
 }
 
 .search-input {
