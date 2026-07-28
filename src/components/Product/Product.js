@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GraphQLClient, gql } from 'graphql-request';
-import { FaEdit, FaTrash, FaPlus, FaImage, FaEllipsisV, FaEye, FaTimes } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaImage, FaEllipsisV, FaEye, FaTimes, FaChevronDown } from 'react-icons/fa';
 import './Product.css';
 
 const GRAPHQL_ENDPOINT = process.env.REACT_APP_GRAPHQL_ENDPOINT || "http://localhost:2000/graphql";
@@ -25,6 +25,11 @@ const GET_ALL_PRODUCTS = gql`
         productCategoriesCode
         productCategories {
           name
+        }
+        tags {
+          id
+          name
+          code
         }
         variants {
           color
@@ -56,6 +61,18 @@ const GET_ALL_PRODUCTS = gql`
 `;
 
 
+
+const GET_ALL_TAGS = gql`
+  query GetAllTags($limit: Int) {
+    getAllTags(limit: $limit) {
+      tags {
+        id
+        name
+        code
+      }
+    }
+  }
+`;
 
 const CREATE_PRODUCT = gql`
   mutation CreateProduct($input: CreateProductInput!) {
@@ -91,6 +108,7 @@ function Product() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [availableTags, setAvailableTags] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -106,6 +124,7 @@ function Product() {
 
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [viewModalProduct, setViewModalProduct] = useState(null);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
 
   // Add Size Modal State
   const [isAddSizeModalOpen, setIsAddSizeModalOpen] = useState(false);
@@ -122,6 +141,7 @@ function Product() {
     brand: '',
     productCategoriesID: '',
     productCategoriesCode: '',
+    tags: [],
     variants: [],
     description: '',
     material: '',
@@ -143,6 +163,11 @@ function Product() {
       setFilteredProducts(data.getAllProducts?.products || []);
       setCategories(data.getAllProducts?.categories || []);
       setTotalCount(data.getAllProducts?.totalCount || 0);
+
+      // Fetch Tags for dropdown
+      const tagsData = await client.request(GET_ALL_TAGS, { limit: 1000 });
+      setAvailableTags(tagsData.getAllTags?.tags || []);
+
       setError(null);
     } catch (err) {
       setError(err);
@@ -210,6 +235,7 @@ function Product() {
         brand: product.brand || '',
         productCategoriesID: product.productCategoriesID || '',
         productCategoriesCode: product.productCategoriesCode || '',
+        tags: product.tags ? [...product.tags] : [],
         variants: product.variants ? product.variants.map(v => ({ ...v })) : [],
         description: product.description || '',
         material: product.material || '',
@@ -225,6 +251,7 @@ function Product() {
       });
     } else {
       setEditingProduct(null);
+      setIsTagDropdownOpen(false);
       setFormData({
         name: '',
         price: '',
@@ -234,6 +261,7 @@ function Product() {
         brand: '',
         productCategoriesID: '',
         productCategoriesCode: '',
+        tags: [],
         variants: [],
         description: '',
         material: '',
@@ -317,6 +345,7 @@ function Product() {
       brand: formData.brand,
       productCategoriesID: formData.productCategoriesID,
       productCategoriesCode: formData.productCategoriesCode,
+      tags: formData.tags.map(t => t.id),
       variants: formData.variants.map(v => ({ color: v.color, size: v.size, stock: Number(v.stock) })),
       description: formData.description,
       material: formData.material,
@@ -576,7 +605,7 @@ function Product() {
               </h2>
               <button onClick={() => setViewModalProduct(null)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999', transition: 'color 0.2s' }}>&times;</button>
             </div>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', fontSize: '15px', color: '#555' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px', gap: '10px', flexWrap: 'wrap' }}>
                 {viewModalProduct.images?.map((img, i) => (
@@ -590,7 +619,21 @@ function Product() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Discount:</strong> <span>{viewModalProduct.discountPercentage}%</span></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Category:</strong> <span>{viewModalProduct.productCategories?.name || viewModalProduct.productCategoriesCode}</span></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Description:</strong> <span>{viewModalProduct.description || "N/A"}</span></div>
-              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}>
+                <strong>Tags:</strong>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                  {viewModalProduct.tags && viewModalProduct.tags.length > 0 ? (
+                    viewModalProduct.tags.map(tag => (
+                      <span key={tag.id} style={{ background: '#e8f0fe', color: '#4a90e2', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500' }}>
+                        {tag.name} ({tag.code})
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: '#999' }}>No tags</span>
+                  )}
+                </div>
+              </div>
+
               <h3 style={{ fontSize: '16px', color: '#4a90e2', marginBottom: '15px', borderBottom: '2px solid #4a90e2', paddingBottom: '5px', display: 'inline-block', alignSelf: 'flex-start', marginTop: '10px' }}>Variants</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
                 <thead>
@@ -653,10 +696,10 @@ function Product() {
                   </div>
                   <div className="form-group">
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Brand *</label>
-                    <input type="text" required value={formData.brand} onChange={(e) => setFormData({...formData, brand: e.target.value})} placeholder="E.g. Nike" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
+                    <input type="text" required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} placeholder="E.g. Nike" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
                   </div>
                   <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', gridColumn: '1 / -1' }}>
-                    <input type="checkbox" checked={formData.isFeatured} onChange={(e) => setFormData({...formData, isFeatured: e.target.checked})} id="isFeatured" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                    <input type="checkbox" checked={formData.isFeatured} onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })} id="isFeatured" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <label htmlFor="isFeatured" style={{ marginBottom: 0, cursor: 'pointer', fontWeight: '500', color: '#555', fontSize: '14px' }}>Featured Product</label>
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -667,6 +710,58 @@ function Product() {
                         <option key={cat.id} value={cat.id}>{cat.name} ({cat.code})</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Tags</label>
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+                        style={{ width: '100%', minHeight: '42px', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', flex: 1 }}>
+                          {formData.tags.length === 0 && <span style={{ color: '#757575', padding: '2px 0' }}>Select Tags</span>}
+                          {formData.tags.map(tag => (
+                            <span key={tag.id} style={{ background: '#e8f0fe', color: '#4a90e2', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              {tag.name}
+                              <FaTimes style={{ cursor: 'pointer' }} onClick={(e) => {
+                                e.stopPropagation();
+                                setFormData({ ...formData, tags: formData.tags.filter(t => t.id !== tag.id) });
+                              }} />
+                            </span>
+                          ))}
+                        </div>
+                        <FaChevronDown style={{ color: '#555', fontSize: '12px', flexShrink: 0, marginLeft: '10px' }} />
+                      </div>
+                      {isTagDropdownOpen && (
+                        <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '6px', marginTop: '4px', zIndex: 10, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                          {availableTags.length === 0 ? (
+                            <div style={{ padding: '10px', color: '#888', fontSize: '13px' }}>No tags available. Go to Tags page to create some.</div>
+                          ) : (
+                            availableTags.map(tag => {
+                              const isSelected = formData.tags.some(t => t.id === tag.id);
+                              return (
+                                <div
+                                  key={tag.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setFormData({ ...formData, tags: formData.tags.filter(t => t.id !== tag.id) });
+                                    } else {
+                                      setFormData({ ...formData, tags: [...formData.tags, tag] });
+                                    }
+                                  }}
+                                  style={{ padding: '10px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', background: isSelected ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', transition: 'background 0.2s' }}
+                                  onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                                  onMouseOut={(e) => e.currentTarget.style.background = isSelected ? '#f8f9fa' : '#fff'}
+                                >
+                                  <input type="checkbox" checked={isSelected} readOnly style={{ cursor: 'pointer' }} />
+                                  <span style={{ fontSize: '14px', color: '#333' }}>{tag.name} ({tag.code})</span>
+                                </div>
+                              )
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Description</label>
@@ -790,8 +885,8 @@ function Product() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '10px', paddingTop: '20px', borderTop: '1px solid #f0f0f0' }}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleCloseModal}
                   style={{ padding: '10px 20px', background: '#fff', color: '#555', border: '1px solid #d9d9d9', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s' }}
                   onMouseOver={(e) => { e.currentTarget.style.color = '#4a90e2'; e.currentTarget.style.borderColor = '#4a90e2'; }}
@@ -799,12 +894,12 @@ function Product() {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={uploadingImage}
                   style={{ padding: '10px 24px', background: '#4a90e2', color: 'white', border: 'none', borderRadius: '6px', cursor: uploadingImage ? 'not-allowed' : 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background 0.2s', boxShadow: '0 2px 6px rgba(74, 144, 226, 0.3)' }}
-                  onMouseOver={(e) => { if(!uploadingImage) e.currentTarget.style.background = '#357abd'; }}
-                  onMouseOut={(e) => { if(!uploadingImage) e.currentTarget.style.background = '#4a90e2'; }}
+                  onMouseOver={(e) => { if (!uploadingImage) e.currentTarget.style.background = '#357abd'; }}
+                  onMouseOut={(e) => { if (!uploadingImage) e.currentTarget.style.background = '#4a90e2'; }}
                 >
                   {editingProduct ? "Update Product" : "Save Product"}
                 </button>
@@ -866,8 +961,8 @@ function Product() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '10px', paddingTop: '20px', borderTop: '1px solid #f0f0f0' }}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={closeAddSizeModal}
                   style={{ padding: '10px 20px', background: '#fff', color: '#555', border: '1px solid #d9d9d9', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px', transition: 'all 0.2s' }}
                   onMouseOver={(e) => { e.currentTarget.style.color = '#4a90e2'; e.currentTarget.style.borderColor = '#4a90e2'; }}
@@ -875,12 +970,12 @@ function Product() {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={savingSize}
                   style={{ padding: '10px 24px', background: '#4a90e2', color: 'white', border: 'none', borderRadius: '6px', cursor: savingSize ? 'not-allowed' : 'pointer', fontWeight: '500', fontSize: '14px', transition: 'background 0.2s', boxShadow: '0 2px 6px rgba(74, 144, 226, 0.3)' }}
-                  onMouseOver={(e) => { if(!savingSize) e.currentTarget.style.background = '#357abd'; }}
-                  onMouseOut={(e) => { if(!savingSize) e.currentTarget.style.background = '#4a90e2'; }}
+                  onMouseOver={(e) => { if (!savingSize) e.currentTarget.style.background = '#357abd'; }}
+                  onMouseOut={(e) => { if (!savingSize) e.currentTarget.style.background = '#4a90e2'; }}
                 >
                   {savingSize ? 'Saving...' : 'Save Size'}
                 </button>
