@@ -107,6 +107,7 @@ const ADD_PRODUCT_SIZE = gql`
 function Product() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [availableTags, setAvailableTags] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -436,6 +437,18 @@ function Product() {
     return `${date.toLocaleDateString('en-IN')}, ${date.toLocaleTimeString('en-IN').toLowerCase()}`;
   };
 
+  const displayedProducts = filteredProducts.filter((prod) => {
+    if (selectedCategory === "ALL") return true;
+    const catName = prod.productCategories?.name || "";
+    const catCode = prod.productCategoriesCode || "";
+    const catId = prod.productCategoriesID || "";
+    return (
+      catName.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+      catCode.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+      catId === selectedCategory
+    );
+  });
+
   if (error) return <div className="prod-error">Error loading products: {error.message}</div>;
 
   return (
@@ -458,6 +471,18 @@ function Product() {
         <div className="prod-header">
           <h2>Products List</h2>
           <div className="header-actions">
+            <select
+              className="filter-select"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="ALL">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.name || cat.code}>
+                  {cat.name || cat.code}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               className="search-input"
@@ -497,7 +522,7 @@ function Product() {
                     ))}
                   </tr>
                 ))
-              ) : filteredProducts.map((prod, index) => (
+              ) : displayedProducts.map((prod, index) => (
                 <tr key={prod.id}>
                   <td>{index + 1}</td>
                   <td>
@@ -539,9 +564,11 @@ function Product() {
                   </td>
                 </tr>
               ))}
-              {!loading && filteredProducts.length === 0 && (
+              {!loading && displayedProducts.length === 0 && (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#858796' }}>No products found.</td>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#858796' }}>
+                    {selectedCategory === "ALL" ? "No products found." : `No products found in "${selectedCategory}" category.`}
+                  </td>
                 </tr>
               )}
             </tbody>
