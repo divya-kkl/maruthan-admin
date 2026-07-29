@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GraphQLClient, gql } from 'graphql-request';
 import { FaEdit, FaTrash, FaPlus, FaSearch } from 'react-icons/fa';
 import './Tags.css';
@@ -79,7 +79,7 @@ function Tags() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       setLoading(true);
       const data = await client.request(GET_ALL_TAGS, { search: searchTerm, page, limit });
@@ -91,7 +91,7 @@ function Tags() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, page, limit]);
 
   useEffect(() => {
     setPage(1);
@@ -102,7 +102,7 @@ function Tags() {
       fetchTags();
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchTerm, page]);
+  }, [fetchTags]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
