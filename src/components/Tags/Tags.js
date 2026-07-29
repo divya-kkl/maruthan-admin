@@ -102,6 +102,7 @@ function Tags() {
       fetchTags();
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, page]);
 
   const handleInputChange = (e) => {
