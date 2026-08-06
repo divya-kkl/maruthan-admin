@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import './FAQ.css';
 
-const API_URL = 'http://localhost:2000/graphql';
+const GRAPHQL_ENDPOINT = process.env.REACT_APP_GRAPHQL_ENDPOINT || "http://localhost:2000/graphql";
 
-/* ─── GraphQL Queries & Mutations ─── */
+
 const GET_ALL_FAQS = `
   query { getAllFAQs { id question answer category order isActive createdAt } }
 `;
@@ -28,11 +28,11 @@ const TOGGLE_FAQ = `
 
 const gqlFetch = (query, variables = {}) => {
   const token = localStorage.getItem('jwtToken');
-  return fetch(API_URL, {
+  return fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ query, variables }),
   }).then((r) => r.json());
@@ -63,8 +63,12 @@ const FAQ = () => {
 
   const fetchFAQs = async () => {
     setLoading(true);
-    const { data } = await gqlFetch(GET_ALL_FAQS);
-    setFaqs(data?.getAllFAQs || []);
+    try {
+      const { data } = await gqlFetch(GET_ALL_FAQS);
+      setFaqs(data?.getAllFAQs || []);
+    } catch (err) {
+      showToast('Failed to load FAQs.', 'error');
+    }
     setLoading(false);
   };
 
@@ -93,47 +97,71 @@ const FAQ = () => {
     }
     setSubmitting(true);
     const input = { ...form, order: Number(form.order) };
-    if (editId) {
-      const { data, errors } = await gqlFetch(UPDATE_FAQ, { id: editId, input });
-      if (errors) { showToast(errors[0].message, 'error'); }
-      else {
-        setFaqs((prev) => prev.map((f) => (f.id === editId ? { ...f, ...data.updateFAQ } : f)));
-        showToast('FAQ updated successfully!');
-        closeForm();
+    try {
+      if (editId) {
+        const { data, errors } = await gqlFetch(UPDATE_FAQ, { id: editId, input });
+        if (errors) {
+          showToast(errors[0].message, 'error');
+        } else {
+          setFaqs((prev) =>
+            prev.map((f) => (f.id === editId ? { ...f, ...data.updateFAQ } : f))
+          );
+          showToast('FAQ updated successfully!');
+          closeForm();
+        }
+      } else {
+        const { data, errors } = await gqlFetch(CREATE_FAQ, { input });
+        if (errors) {
+          showToast(errors[0].message, 'error');
+        } else {
+          setFaqs((prev) => [data.createFAQ, ...prev]);
+          showToast('FAQ created successfully!');
+          closeForm();
+        }
       }
-    } else {
-      const { data, errors } = await gqlFetch(CREATE_FAQ, { input });
-      if (errors) { showToast(errors[0].message, 'error'); }
-      else {
-        setFaqs((prev) => [data.createFAQ, ...prev]);
-        showToast('FAQ created successfully!');
-        closeForm();
-      }
+    } catch (err) {
+      showToast('Something went wrong. Please try again.', 'error');
     }
     setSubmitting(false);
   };
 
   const handleDelete = async (id) => {
-    const { errors } = await gqlFetch(DELETE_FAQ, { id });
-    if (errors) { showToast(errors[0].message, 'error'); }
-    else {
-      setFaqs((prev) => prev.filter((f) => f.id !== id));
-      showToast('FAQ deleted.');
+    try {
+      const { errors } = await gqlFetch(DELETE_FAQ, { id });
+      if (errors) {
+        showToast(errors[0].message, 'error');
+      } else {
+        setFaqs((prev) => prev.filter((f) => f.id !== id));
+        showToast('FAQ deleted.');
+      }
+    } catch (err) {
+      showToast('Failed to delete FAQ.', 'error');
     }
     setDeleteConfirm(null);
   };
 
   const handleToggle = async (id) => {
-    const { data, errors } = await gqlFetch(TOGGLE_FAQ, { id });
-    if (errors) { showToast(errors[0].message, 'error'); }
-    else {
-      setFaqs((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, isActive: data.toggleFAQStatus.isActive } : f))
-      );
+    try {
+      const { data, errors } = await gqlFetch(TOGGLE_FAQ, { id });
+      if (errors) {
+        showToast(errors[0].message, 'error');
+      } else {
+        setFaqs((prev) =>
+          prev.map((f) =>
+            f.id === id ? { ...f, isActive: data.toggleFAQStatus.isActive } : f
+          )
+        );
+      }
+    } catch (err) {
+      showToast('Failed to toggle FAQ status.', 'error');
     }
   };
 
-  const closeForm = () => { setShowForm(false); setEditId(null); setForm(EMPTY_FORM); };
+  const closeForm = () => {
+    setShowForm(false);
+    setEditId(null);
+    setForm(EMPTY_FORM);
+  };
 
   const categories = ['All', ...new Set(faqs.map((f) => f.category).filter(Boolean))];
   const filtered = faqs
@@ -157,7 +185,9 @@ const FAQ = () => {
       <div className="faq-admin-header">
         <div>
           <h1 className="faq-admin-title">FAQ Management</h1>
-          <p className="faq-admin-subtitle">{faqs.length} question{faqs.length !== 1 ? 's' : ''} total</p>
+          <p className="faq-admin-subtitle">
+            {faqs.length} question{faqs.length !== 1 ? 's' : ''} total
+          </p>
         </div>
         <button className="faq-admin-btn faq-admin-btn--create" onClick={openCreate}>
           + Add New FAQ
@@ -181,7 +211,9 @@ const FAQ = () => {
           id="faq-admin-category-filter"
         >
           {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
         </select>
       </div>
@@ -189,7 +221,9 @@ const FAQ = () => {
       {/* FAQ Table */}
       {loading ? (
         <div className="faq-admin-loading">
-          {[1, 2, 3].map((i) => <div key={i} className="faq-admin-skeleton" />)}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="faq-admin-skeleton" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="faq-admin-empty">
@@ -256,11 +290,20 @@ const FAQ = () => {
 
       {/* Create / Edit Modal */}
       {showForm && (
-        <div className="faq-modal-overlay" onClick={(e) => e.target === e.currentTarget && closeForm()}>
+        <div
+          className="faq-modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && closeForm()}
+        >
           <div className="faq-modal">
             <div className="faq-modal-header">
               <h2>{editId ? 'Edit FAQ' : 'Add New FAQ'}</h2>
-              <button className="faq-modal-close" onClick={closeForm} id="faq-modal-close">✕</button>
+              <button
+                className="faq-modal-close"
+                onClick={closeForm}
+                id="faq-modal-close"
+              >
+                ✕
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="faq-form">
               <div className="faq-form-group">
@@ -308,7 +351,11 @@ const FAQ = () => {
                 </div>
               </div>
               <div className="faq-form-actions">
-                <button type="button" className="faq-admin-btn faq-admin-btn--cancel" onClick={closeForm}>
+                <button
+                  type="button"
+                  className="faq-admin-btn faq-admin-btn--cancel"
+                  onClick={closeForm}
+                >
                   Cancel
                 </button>
                 <button
