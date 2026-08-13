@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './FAQ.css';
 
 const GRAPHQL_ENDPOINT = process.env.REACT_APP_GRAPHQL_ENDPOINT || "http://localhost:2000/graphql";
@@ -52,17 +52,12 @@ const FAQ = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
 
-  useEffect(() => {
-    fetchFAQs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const showToast = (msg, type = 'success') => {
+  const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
-  const fetchFAQs = async () => {
+  const fetchFAQs = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await gqlFetch(GET_ALL_FAQS);
@@ -71,7 +66,11 @@ const FAQ = () => {
       showToast('Failed to load FAQs.', 'error');
     }
     setLoading(false);
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchFAQs();
+  }, [fetchFAQs]);
 
   const openCreate = () => {
     setEditId(null);
