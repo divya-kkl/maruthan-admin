@@ -120,7 +120,7 @@ const FAQ = () => {
         }
       }
     } catch (err) {
-      showToast('Something went wrong. Please try again.', 'error');
+      showToast('Something went wrong.   Please try again.', 'error');
     }
     setSubmitting(false);
   };
