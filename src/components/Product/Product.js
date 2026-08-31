@@ -26,6 +26,11 @@ const GET_ALL_PRODUCTS = gql`
         productCategories {
           name
         }
+        productSubCategoriesID
+        productSubCategoriesCode
+        productSubCategories {
+          name
+        }
         tags {
           id
           name
@@ -60,6 +65,17 @@ const GET_ALL_PRODUCTS = gql`
   }
 `;
 
+const GET_ALL_SUBCATEGORIES = gql`
+  query GetAllSubCategories($limit: Int) {
+    getAllSubCategories(limit: $limit) {
+      id
+      name
+      code
+      productCategoryId
+    }
+  }
+`;
+
 
 
 const GET_ALL_TAGS = gql`
@@ -73,6 +89,7 @@ const GET_ALL_TAGS = gql`
     }
   }
 `;
+
 
 const CREATE_PRODUCT = gql`
   mutation CreateProduct($input: CreateProductInput!) {
@@ -107,6 +124,8 @@ const ADD_PRODUCT_SIZE = gql`
 function Product() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [availableSubCategories, setAvailableSubCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [availableTags, setAvailableTags] = useState([]);
 
@@ -141,6 +160,8 @@ function Product() {
     brand: '',
     productCategoriesID: '',
     productCategoriesCode: '',
+    productSubCategoriesID: '',
+    productSubCategoriesCode: '',
     tags: [],
     variants: [],
     description: '',
@@ -167,6 +188,11 @@ function Product() {
       // Fetch Tags for dropdown
       const tagsData = await client.request(GET_ALL_TAGS, { limit: 1000 });
       setAvailableTags(tagsData.getAllTags?.tags || []);
+
+      // Fetch SubCategories
+      const subCatsData = await client.request(GET_ALL_SUBCATEGORIES, { limit: 1000 });
+      setSubCategories(subCatsData.getAllSubCategories || []);
+
 
       setError(null);
     } catch (err) {
@@ -226,6 +252,7 @@ function Product() {
     setOpenDropdownId(null);
     if (product) {
       setEditingProduct(product);
+      setAvailableSubCategories(subCategories.filter(subCat => subCat.productCategoryId === (product.productCategoriesID || '')));
       setFormData({
         name: product.name || '',
         price: product.price || '',
@@ -235,6 +262,8 @@ function Product() {
         brand: product.brand || '',
         productCategoriesID: product.productCategoriesID || '',
         productCategoriesCode: product.productCategoriesCode || '',
+        productSubCategoriesID: product.productSubCategoriesID || '',
+        productSubCategoriesCode: product.productSubCategoriesCode || '',
         tags: product.tags ? [...product.tags] : [],
         variants: product.variants ? product.variants.map(v => ({ ...v })) : [],
         description: product.description || '',
@@ -252,6 +281,7 @@ function Product() {
     } else {
       setEditingProduct(null);
       setIsTagDropdownOpen(false);
+      setAvailableSubCategories([]);
       setFormData({
         name: '',
         price: '',
@@ -261,6 +291,8 @@ function Product() {
         brand: '',
         productCategoriesID: '',
         productCategoriesCode: '',
+        productSubCategoriesID: '',
+        productSubCategoriesCode: '',
         tags: [],
         variants: [],
         description: '',
@@ -317,7 +349,25 @@ function Product() {
     setFormData(prev => ({
       ...prev,
       productCategoriesID: catId,
-      productCategoriesCode: selectedCat ? selectedCat.code : ''
+      productCategoriesCode: selectedCat ? selectedCat.code : '',
+      productSubCategoriesID: '',
+      productSubCategoriesCode: ''
+    }));
+
+    if (catId) {
+      setAvailableSubCategories(subCategories.filter(subCat => subCat.productCategoryId === catId));
+    } else {
+      setAvailableSubCategories([]);
+    }
+  };
+
+  const handleSubCategoryChange = (e) => {
+    const subCatId = e.target.value;
+    const selectedSubCat = availableSubCategories.find(sc => sc.id === subCatId);
+    setFormData(prev => ({
+      ...prev,
+      productSubCategoriesID: subCatId,
+      productSubCategoriesCode: selectedSubCat ? selectedSubCat.code : ''
     }));
   };
 
@@ -345,6 +395,8 @@ function Product() {
       brand: formData.brand,
       productCategoriesID: formData.productCategoriesID,
       productCategoriesCode: formData.productCategoriesCode,
+      productSubCategoriesID: formData.productSubCategoriesID,
+      productSubCategoriesCode: formData.productSubCategoriesCode,
       tags: formData.tags.map(t => t.id),
       variants: formData.variants.map(v => ({ color: v.color, size: v.size, stock: Number(v.stock) })),
       description: formData.description,
@@ -618,6 +670,7 @@ function Product() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>MRP:</strong> <span>₹{viewModalProduct.mrp}</span></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Discount:</strong> <span>{viewModalProduct.discountPercentage}%</span></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Category:</strong> <span>{viewModalProduct.productCategories?.name || viewModalProduct.productCategoriesCode}</span></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>SubCategory:</strong> <span>{viewModalProduct.productSubCategories?.name || viewModalProduct.productSubCategoriesCode || "N/A"}</span></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}><strong>Description:</strong> <span>{viewModalProduct.description || "N/A"}</span></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}>
                 <strong>Tags:</strong>
@@ -711,6 +764,19 @@ function Product() {
                       ))}
                     </select>
                   </div>
+
+                  {formData.productCategoriesID && (
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>SubCategory</label>
+                      <select value={formData.productSubCategoriesID} onChange={handleSubCategoryChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px', backgroundColor: '#fff' }}>
+                        <option value="">Select SubCategory</option>
+                        {availableSubCategories.map(subCat => (
+                          <option key={subCat.id} value={subCat.id}>{subCat.name} ({subCat.code})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Tags</label>
                     <div style={{ position: 'relative' }}>
@@ -775,15 +841,15 @@ function Product() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
                   <div className="form-group">
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Price (₹) *</label>
-                    <input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
+                    <input type="text" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value.replace(/[^0-9.]/g, '') })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
                   </div>
                   <div className="form-group">
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>MRP (₹) *</label>
-                    <input type="number" required value={formData.mrp} onChange={(e) => setFormData({ ...formData, mrp: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
+                    <input type="text" required value={formData.mrp} onChange={(e) => setFormData({ ...formData, mrp: e.target.value.replace(/[^0-9.]/g, '') })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
                   </div>
                   <div className="form-group">
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#555', fontSize: '14px' }}>Discount (%)</label>
-                    <input type="number" value={formData.discountPercentage} onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
+                    <input type="text" value={formData.discountPercentage} onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value.replace(/[^0-9.]/g, '') })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e0e0e0', fontSize: '14px' }} />
                   </div>
                 </div>
               </div>
