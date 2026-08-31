@@ -4,6 +4,7 @@ import Login from './Login';
 import DashboardHome from './DashboardHome';
 import Orders from './pages/Orders/Orders';
 import Categories from './components/ProductCategories/Categories';
+import SubCategories from './components/ProductSubCategories/SubCategories';
 import Product from './components/Product/Product';
 import Cart from './components/Cart/Cart';
 import User from './components/User/User';
@@ -43,6 +44,7 @@ function App() {
           } />
           <Route path="orders" element={<main className="dashboard-main"><Orders /></main>} />
           <Route path="categories" element={<main className="dashboard-main"><Categories /></main>} />
+          <Route path="subcategories" element={<main className="dashboard-main"><SubCategories /></main>} />
           <Route path="products" element={<main className="dashboard-main"><Product /></main>} />
           <Route path="carts" element={<main className="dashboard-main"><Cart /></main>} />
           <Route path="users" element={<main className="dashboard-main"><User /></main>} />

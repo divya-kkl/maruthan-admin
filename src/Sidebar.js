@@ -21,6 +21,9 @@ function Sidebar() {
         <NavLink to="/dashboard/categories" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
           <FaTags className="nav-icon" /> Categories
         </NavLink>
+        <NavLink to="/dashboard/subcategories" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+          <FaTags className="nav-icon" /> SubCategories
+        </NavLink>
         <NavLink to="/dashboard/products" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
           <FaBoxOpen className="nav-icon" /> Products
         </NavLink>
